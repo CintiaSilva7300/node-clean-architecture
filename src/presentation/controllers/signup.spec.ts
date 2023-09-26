@@ -16,6 +16,21 @@ const makeEmailValidator = (): EmailValidator => {
   return new EmailValidatorStub();
 };
 
+const makeAddAccountStub = (): AddAccount => {
+  class addAccountStubStub implements AddAccount {
+    add(account: AddAccountModel): AccountModel {
+      const falkeAccount = {
+        id: "valid_id",
+        name: "valid_name",
+        email: "valid_email@email.com",
+        password: "valid_password",
+      };
+      return falkeAccount;
+    }
+  }
+  return new addAccountStubStub();
+};
+
 const makeSut = (): SutTypes => {
   const emailValidatorStub = makeEmailValidator();
   const sut = new SignUpController(emailValidatorStub);
@@ -149,5 +164,24 @@ describe("SignUp Controller", () => {
     const httpResponse = sut.handle(httpRequest);
     expect(httpResponse.statusCode).toBe(500);
     expect(httpResponse.body).toEqual(new ServerError());
+  });
+
+  test("Shoult call AddACcount with correct values", () => {
+    const { sut, addAccountStub } = makeSut();
+    const addSpy = jest.spyOn(addAccountStub, "add");
+    const httpRequest = {
+      body: {
+        name: "any_name",
+        email: "any_email@mail.com",
+        password: "any_password",
+        passwordConfirmation: "any_password",
+      },
+    };
+    sut.handle(httpRequest);
+    expect(addSpy).toHaveBeenCalledWith({
+      name: "any_name",
+      email: "any_email@mail.com",
+      password: "any_password",
+    });
   });
 });
