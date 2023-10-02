@@ -1,11 +1,8 @@
 import { SignUpController } from "./signup";
 import { EmailValidator } from "../protocols";
 import { MissingParamError, InvalidParamError, ServerError } from "../errors";
-
-interface SutTypes {
-  sut: SignUpController;
-  emailValidatorStub: EmailValidator;
-}
+import { AccountModel } from "../../domain/models/account";
+import { AddAccount, AddAccountModel } from "../../domain/usecases/add-account";
 
 const makeEmailValidator = (): EmailValidator => {
   class EmailValidatorStub implements EmailValidator {
@@ -16,8 +13,8 @@ const makeEmailValidator = (): EmailValidator => {
   return new EmailValidatorStub();
 };
 
-const makeAddAccountStub = (): AddAccount => {
-  class addAccountStubStub implements AddAccount {
+const makeAddAccount = (): AddAccount => {
+  class AddAccountStub implements AddAccount {
     add(account: AddAccountModel): AccountModel {
       const falkeAccount = {
         id: "valid_id",
@@ -28,15 +25,23 @@ const makeAddAccountStub = (): AddAccount => {
       return falkeAccount;
     }
   }
-  return new addAccountStubStub();
+  return new AddAccountStub();
 };
+
+interface SutTypes {
+  sut: SignUpController;
+  emailValidatorStub: EmailValidator;
+  addAccountStub: AddAccount;
+}
 
 const makeSut = (): SutTypes => {
   const emailValidatorStub = makeEmailValidator();
-  const sut = new SignUpController(emailValidatorStub);
+  const addAccountStub = makeAddAccount();
+  const sut = new SignUpController(emailValidatorStub, addAccountStub);
   return {
     sut,
     emailValidatorStub,
+    addAccountStub,
   };
 };
 
@@ -99,7 +104,7 @@ describe("SignUp Controller", () => {
     );
   });
 
-  test("Shoult return 400 if no passwordConfirmation fails", () => {
+  test("Shoult return 400 if passwordConfirmation fails", () => {
     const { sut } = makeSut();
     const httpRequest = {
       body: {
